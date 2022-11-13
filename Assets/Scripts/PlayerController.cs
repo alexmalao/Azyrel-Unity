@@ -10,12 +10,10 @@ public class PlayerController : MonoBehaviour {
     
     private PlayerControls controls;
     private Rigidbody2D body;
-    private CharMovementData moveData;
 
     private void Awake() {
         controls = new PlayerControls();
         body = GetComponent<Rigidbody2D>();
-        moveData = CharMovementData.CreateInstance<CharMovementData>();
     }
 
     private void OnEnable() {
@@ -32,14 +30,19 @@ public class PlayerController : MonoBehaviour {
         MoveHorizontal();
     }
 
+    /**
+     * Controls the horizontal movement of the character body.
+     */
     void MoveHorizontal() {
         float horizontal = controls.Default.Move.ReadValue<float>();
 
-        float deltaX = body.velocity.x + horizontal * moveData.horizontalSpeed * Time.deltaTime;
-        Debug.Log(horizontal);
-        Debug.Log(deltaX);
+        float updatedXVel = body.velocity.x + horizontal * CharMovementData.HORI_ACCEL * Time.deltaTime;
+        if (updatedXVel > CharMovementData.MAX_HORI_SPEED) {
+            updatedXVel = Mathf.Max(body.velocity.x, CharMovementData.MAX_HORI_SPEED);
+        } else if (updatedXVel < -CharMovementData.MAX_HORI_SPEED) {
+            updatedXVel = Mathf.Min(body.velocity.x, -CharMovementData.MAX_HORI_SPEED);
+        }
 
-        // FIXME: for some reason this value occassionally doesnt not like getting modified
-        body.velocity = new Vector2(deltaX, body.velocity.y);
+        body.velocity = new Vector2(updatedXVel, body.velocity.y);
     }
 }

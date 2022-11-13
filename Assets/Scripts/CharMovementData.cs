@@ -7,8 +7,8 @@ using UnityEngine;
  * Dataclass for storing basic physics values. Include in a player controller
  * for basic 
  */
-public class CharMovementData : ScriptableObject {
+public class CharMovementData {
     
-    [SerializeField] public float horizontalSpeed = 25.0f;
-    [SerializeField] public float maxHorizontalSpeed = 500.0f;
+    public static float HORI_ACCEL = 50.0f;
+    public static float MAX_HORI_SPEED = 20.0f;
 }
