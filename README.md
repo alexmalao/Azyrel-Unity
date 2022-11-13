@@ -17,8 +17,9 @@ Akyra Synthia is a red haired knight from the Sky Isles who seeks revenge for he
 fallen brother who she lost to the aforementioned accursed. She travels far in spite
 of her duty to uncover the mystery that brought suffering to the world. She has
 mastery of spirit arts and chaos magic.
-Also a [cutie](https://github.com/alexmalao/Azyrel/blob/master/Art/portrait_akyra.png?raw=True)
+
+![cutie](https://github.com/alexmalao/Azyrel/blob/master/Art/portrait_akyra.png)
 
 Leo Kanthor is [stub].
 
-Fae Nightwolf is [beautiful and I'd die for her](https://github.com/alexmalao/Azyrel/blob/master/Art/portrait_fae.png?raw=true)
+Fae Nightwolf is ![beautiful and I'd die for her](https://github.com/alexmalao/Azyrel/blob/master/Art/portrait_fae.png)
