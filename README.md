@@ -20,7 +20,7 @@ fallen brother who she lost to the aforementioned accursed. She travels far in s
 of her duty to uncover the mystery that brought havoc to the world. She wields a
 greatsword and has mastery of spirit arts and chaos magic.
 
-![akyra](https://github.com/alexmalao/Azyrel/blob/master/Gallery/portrait_akyra.png)
+![akyra](https://github.com/alexmalao/Azyrel/blob/master/gallery/portrait_akyra.png)
 
 #### Leo Kanthor
 is an orphaned scholar from the Great Plains looking to learn more
@@ -34,5 +34,5 @@ process of ascension. She follows the path of the accursed in hopes of learning
 more about the rites and the elder dragons. She wields a lance and has mastery
 of time and blood magic.
 
-![fae is beautiful and i'd die for her](https://github.com/alexmalao/Azyrel/blob/master/Gallery/portrait_fae.png)
+![fae is beautiful and i'd die for her](https://github.com/alexmalao/Azyrel/blob/master/gallery/portrait_fae.png)
 
