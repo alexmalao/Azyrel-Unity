@@ -9,21 +9,30 @@ between four playable characters who each have their own respective weapon class
 two types of magics.
 
 #### Azyrel Angelo
-is a blond haired spellsword who recently lost his mother immediately
-prior to the start of his journey. His memory is hazy and wishes to find his missing
-father who must know the origin of a recently appeared accursed. He has mastery of
-both ice and fire magic.
+is a blond haired spellsword from a village in Callestine Forest who recently lost
+his mother immediately prior to the start of his journey. His memory is hazy and
+wishes to find his missing father who must know the origin of a recently appeared
+accursed. He wields a straight sword and has mastery of both ice and fire magic.
 
 #### Akyra Synthia
 is a red haired knight from the Sky Isles who seeks revenge for her
 fallen brother who she lost to the aforementioned accursed. She travels far in spite
-of her duty to uncover the mystery that brought suffering to the world. She has
-mastery of spirit arts and chaos magic.
+of her duty to uncover the mystery that brought havoc to the world. She wields a
+greatsword and has mastery of spirit arts and chaos magic.
 
-![akyra](https://github.com/alexmalao/Azyrel/blob/master/Art/portrait_akyra.png =500x600)
+![akyra](https://github.com/alexmalao/Azyrel/blob/master/gallery/portrait_akyra.png)
 
-Leo Kanthor is [stub].
+#### Leo Kanthor
+is an orphaned scholar from the Great Plains looking to learn more
+about the accursed and the secrets hidden behind draconic tongue. He later joins
+the two in search for his own particular interests. He wields two daggers and
+has mastery of wind and thunder magic.
 
-Fae Nightwolf is [stub]!
-11
-![fae is beautiful and i'd die for her](https://github.com/alexmalao/Azyrel/blob/master/Art/portrait_fae.png =500x600)
+#### Fae Nightwolf
+is an Elven mercenary from the Crystal Islands with the task of investigating the
+process of ascension. She follows the path of the accursed in hopes of learning
+more about the rites and the elder dragons. She wields a lance and has mastery
+of time and blood magic.
+
+![fae is beautiful and i'd die for her](https://github.com/alexmalao/Azyrel/blob/master/gallery/portrait_fae.png)
+
