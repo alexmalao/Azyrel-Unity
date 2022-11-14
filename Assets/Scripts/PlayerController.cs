@@ -11,11 +11,14 @@ public class PlayerController : MonoBehaviour {
     [SerializeField] private LayerMask ground;
 
     protected PlayerControls controls;
+    protected CharMovementData charData;
+
     protected Rigidbody2D body;
     protected Collider2D collider;
 
     private void Awake() {
         this.controls = new PlayerControls();
+        this.charData = new CharMovementData();
         this.body = GetComponent<Rigidbody2D>();
         this.collider = GetComponent<Collider2D>();
     }
@@ -43,11 +46,11 @@ public class PlayerController : MonoBehaviour {
     void MoveHorizontal() {
         float horizontal = controls.Move.Move.ReadValue<float>();
 
-        float updatedXVel = body.velocity.x + horizontal * CharMovementData.HORI_ACCEL * Time.deltaTime;
-        if (updatedXVel > CharMovementData.MAX_HORI_SPEED) {
-            updatedXVel = Mathf.Max(body.velocity.x, CharMovementData.MAX_HORI_SPEED);
-        } else if (updatedXVel < -CharMovementData.MAX_HORI_SPEED) {
-            updatedXVel = Mathf.Min(body.velocity.x, -CharMovementData.MAX_HORI_SPEED);
+        float updatedXVel = body.velocity.x + horizontal * charData.hori_accel * Time.deltaTime;
+        if (updatedXVel > charData.max_hori_speed) {
+            updatedXVel = Mathf.Max(body.velocity.x, charData.max_hori_speed);
+        } else if (updatedXVel < -charData.max_hori_speed) {
+            updatedXVel = Mathf.Min(body.velocity.x, -charData.max_hori_speed);
         }
 
         body.velocity = new Vector2(updatedXVel, body.velocity.y);
@@ -59,7 +62,7 @@ public class PlayerController : MonoBehaviour {
     void Jump() {
         Debug.Log(IsGrounded());
         if (this.IsGrounded()) {
-            body.velocity = new Vector2(body.velocity.x, CharMovementData.JUMP_VEL);
+            body.velocity = new Vector2(body.velocity.x, charData.jump_vel);
         }
     }
 
@@ -69,7 +72,7 @@ public class PlayerController : MonoBehaviour {
     void ShortJump() {
         Debug.Log(IsGrounded());
         if (this.IsGrounded()) {
-            body.velocity = new Vector2(body.velocity.x, CharMovementData.SHORT_JUMP_VEL);
+            body.velocity = new Vector2(body.velocity.x, charData.short_jump_vel);
         }
     }
 
@@ -78,8 +81,8 @@ public class PlayerController : MonoBehaviour {
      */
     private Vector2 GetTopLeftBound() {
         Vector2 topLeft = transform.position;
-        topLeft.x -= collider.bounds.extents.x + CharMovementData.COLLIDER_OFFSET;
-        topLeft.y += collider.bounds.extents.y + CharMovementData.COLLIDER_OFFSET;
+        topLeft.x -= collider.bounds.extents.x - charData.collider_offset;
+        topLeft.y += collider.bounds.extents.y + charData.collider_offset;
         return topLeft;
     }
 
@@ -88,8 +91,8 @@ public class PlayerController : MonoBehaviour {
      */
     private Vector2 GetBotRightBound() {
         Vector2 botRight = transform.position;
-        botRight.x += collider.bounds.extents.x + CharMovementData.COLLIDER_OFFSET;
-        botRight.y -= collider.bounds.extents.y + CharMovementData.COLLIDER_OFFSET;
+        botRight.x += collider.bounds.extents.x - charData.collider_offset;
+        botRight.y -= collider.bounds.extents.y + charData.collider_offset;
         return botRight;
     }
 

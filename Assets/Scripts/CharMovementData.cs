@@ -5,14 +5,14 @@ using UnityEngine;
 
 /**
  * Dataclass for storing basic physics values. Include in a player controller
- * for basic 
+ * for basic physic and collision vaues.
  */
-public class CharMovementData {
+public class CharMovementData : ScriptableObject {
     
-    public static float HORI_ACCEL = 50.0f;
-    public static float MAX_HORI_SPEED = 20.0f;
-    public static float JUMP_VEL = 20.0f;
-    public static float SHORT_JUMP_VEL = 15.0f;
+    public float hori_accel = 50.0f;
+    public float max_hori_speed = 20.0f;
+    public float jump_vel = 20.0f;
+    public float short_jump_vel = 14.0f;
 
-    public static float COLLIDER_OFFSET = 0.5f;
+    public float collider_offset = 0.05f;
 }
