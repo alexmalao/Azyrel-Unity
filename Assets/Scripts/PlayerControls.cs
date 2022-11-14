@@ -24,7 +24,7 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
     ""name"": ""PlayerControls"",
     ""maps"": [
         {
-            ""name"": ""Default"",
+            ""name"": ""Move"",
             ""id"": ""06f80ca4-5898-49d6-b6fc-c94230d2d580"",
             ""actions"": [
                 {
@@ -38,12 +38,21 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""Jump"",
-                    ""type"": ""PassThrough"",
+                    ""type"": ""Button"",
                     ""id"": ""6ce5168b-0bfa-453b-9711-c844665f4a2f"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": true
+                    ""interactions"": ""Hold(duration=0.12)"",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ShortJump"",
+                    ""type"": ""Button"",
+                    ""id"": ""4a8d9d7b-a43b-426c-a19c-775987433ad0"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": ""Tap(duration=0.12)"",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -90,16 +99,28 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""action"": ""Jump"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""efc68d20-cf35-43fc-89d7-a84bf74bf280"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ShortJump"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
     ],
     ""controlSchemes"": []
 }");
-        // Default
-        m_Default = asset.FindActionMap("Default", throwIfNotFound: true);
-        m_Default_Move = m_Default.FindAction("Move", throwIfNotFound: true);
-        m_Default_Jump = m_Default.FindAction("Jump", throwIfNotFound: true);
+        // Move
+        m_Move = asset.FindActionMap("Move", throwIfNotFound: true);
+        m_Move_Move = m_Move.FindAction("Move", throwIfNotFound: true);
+        m_Move_Jump = m_Move.FindAction("Jump", throwIfNotFound: true);
+        m_Move_ShortJump = m_Move.FindAction("ShortJump", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -156,34 +177,39 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         return asset.FindBinding(bindingMask, out action);
     }
 
-    // Default
-    private readonly InputActionMap m_Default;
-    private IDefaultActions m_DefaultActionsCallbackInterface;
-    private readonly InputAction m_Default_Move;
-    private readonly InputAction m_Default_Jump;
-    public struct DefaultActions
+    // Move
+    private readonly InputActionMap m_Move;
+    private IMoveActions m_MoveActionsCallbackInterface;
+    private readonly InputAction m_Move_Move;
+    private readonly InputAction m_Move_Jump;
+    private readonly InputAction m_Move_ShortJump;
+    public struct MoveActions
     {
         private @PlayerControls m_Wrapper;
-        public DefaultActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
-        public InputAction @Move => m_Wrapper.m_Default_Move;
-        public InputAction @Jump => m_Wrapper.m_Default_Jump;
-        public InputActionMap Get() { return m_Wrapper.m_Default; }
+        public MoveActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
+        public InputAction @Move => m_Wrapper.m_Move_Move;
+        public InputAction @Jump => m_Wrapper.m_Move_Jump;
+        public InputAction @ShortJump => m_Wrapper.m_Move_ShortJump;
+        public InputActionMap Get() { return m_Wrapper.m_Move; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
         public bool enabled => Get().enabled;
-        public static implicit operator InputActionMap(DefaultActions set) { return set.Get(); }
-        public void SetCallbacks(IDefaultActions instance)
+        public static implicit operator InputActionMap(MoveActions set) { return set.Get(); }
+        public void SetCallbacks(IMoveActions instance)
         {
-            if (m_Wrapper.m_DefaultActionsCallbackInterface != null)
+            if (m_Wrapper.m_MoveActionsCallbackInterface != null)
             {
-                @Move.started -= m_Wrapper.m_DefaultActionsCallbackInterface.OnMove;
-                @Move.performed -= m_Wrapper.m_DefaultActionsCallbackInterface.OnMove;
-                @Move.canceled -= m_Wrapper.m_DefaultActionsCallbackInterface.OnMove;
-                @Jump.started -= m_Wrapper.m_DefaultActionsCallbackInterface.OnJump;
-                @Jump.performed -= m_Wrapper.m_DefaultActionsCallbackInterface.OnJump;
-                @Jump.canceled -= m_Wrapper.m_DefaultActionsCallbackInterface.OnJump;
+                @Move.started -= m_Wrapper.m_MoveActionsCallbackInterface.OnMove;
+                @Move.performed -= m_Wrapper.m_MoveActionsCallbackInterface.OnMove;
+                @Move.canceled -= m_Wrapper.m_MoveActionsCallbackInterface.OnMove;
+                @Jump.started -= m_Wrapper.m_MoveActionsCallbackInterface.OnJump;
+                @Jump.performed -= m_Wrapper.m_MoveActionsCallbackInterface.OnJump;
+                @Jump.canceled -= m_Wrapper.m_MoveActionsCallbackInterface.OnJump;
+                @ShortJump.started -= m_Wrapper.m_MoveActionsCallbackInterface.OnShortJump;
+                @ShortJump.performed -= m_Wrapper.m_MoveActionsCallbackInterface.OnShortJump;
+                @ShortJump.canceled -= m_Wrapper.m_MoveActionsCallbackInterface.OnShortJump;
             }
-            m_Wrapper.m_DefaultActionsCallbackInterface = instance;
+            m_Wrapper.m_MoveActionsCallbackInterface = instance;
             if (instance != null)
             {
                 @Move.started += instance.OnMove;
@@ -192,13 +218,17 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 @Jump.started += instance.OnJump;
                 @Jump.performed += instance.OnJump;
                 @Jump.canceled += instance.OnJump;
+                @ShortJump.started += instance.OnShortJump;
+                @ShortJump.performed += instance.OnShortJump;
+                @ShortJump.canceled += instance.OnShortJump;
             }
         }
     }
-    public DefaultActions @Default => new DefaultActions(this);
-    public interface IDefaultActions
+    public MoveActions @Move => new MoveActions(this);
+    public interface IMoveActions
     {
         void OnMove(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
+        void OnShortJump(InputAction.CallbackContext context);
     }
 }
