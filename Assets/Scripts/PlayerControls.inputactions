@@ -15,12 +15,21 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Look",
+                    "type": "PassThrough",
+                    "id": "7d0c395d-895d-4e9d-a431-a136b05fdba3",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Jump",
                     "type": "Button",
                     "id": "6ce5168b-0bfa-453b-9711-c844665f4a2f",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": "Hold(duration=0.12)",
+                    "interactions": "Hold(duration=0.1)",
                     "initialStateCheck": false
                 },
                 {
@@ -29,7 +38,25 @@
                     "id": "4a8d9d7b-a43b-426c-a19c-775987433ad0",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": "Tap(duration=0.12)",
+                    "interactions": "Tap(duration=0.1)",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "AirJump",
+                    "type": "Button",
+                    "id": "703bbc9c-aaf9-47de-ab35-70730216bcc4",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Dash",
+                    "type": "Button",
+                    "id": "ac290d8a-a235-4f81-935f-e51ccbf3fd70",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
                     "initialStateCheck": false
                 }
             ],
@@ -48,7 +75,7 @@
                 {
                     "name": "negative",
                     "id": "4660ad2e-f621-4d4c-840f-84ce434bfea1",
-                    "path": "<Keyboard>/#(A)",
+                    "path": "<Keyboard>/a",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -59,7 +86,7 @@
                 {
                     "name": "positive",
                     "id": "0fd1a302-2b6e-4295-a6b8-7a9f128141ac",
-                    "path": "<Keyboard>/#(D)",
+                    "path": "<Keyboard>/d",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -86,6 +113,61 @@
                     "processors": "",
                     "groups": "",
                     "action": "ShortJump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "91b2f4b1-3b11-4fd8-90d3-2f78c9e7020c",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "AirJump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "Vertical",
+                    "id": "e2a28eff-107c-4e54-b8e8-440dfdb71e73",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Look",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "37cdb013-d9fb-4801-98ef-a6c19bbc672a",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "negative",
+                    "id": "9bf97959-a0bb-4a85-bafd-7bba980dbbda",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "55da927a-a667-499f-a7a7-5ad7f7f90ea8",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Dash",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
