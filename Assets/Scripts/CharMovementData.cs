@@ -7,16 +7,20 @@ using UnityEngine;
  * Dataclass for storing basic physics values. Include in a player controller
  * for basic physic and collision vaues.
  */
-public class CharMovementData : ScriptableObject {
+public class CharMovementData {
     
-    public float hori_accel = 50.0f;
-    public float air_hori_accel = 25.0f;
-    public float max_hori_speed = 20.0f;
+    public float xAccel = 45.0f;
+    public float airXAccel = 25.0f;
+    public float maxXSpeed = 17.5f;
 
-    public float jump_vel = 21.5f;
-    public float short_jump_vel = 14.5f;
-    public float air_jump_vel = 20.0f;
-    public float boface_modifier = 0.75f;
+    public float jumpVel = 21.5f;
+    public float shortJumpVel = 14.5f;
 
-    public float collider_offset = 0.05f;
+    public float airJumpVel = 20.0f;
+    public float minAirXJumpSpeed = 7.5f;
+    public float maxAirXSpeed = 7.5f;
+    public float airDownDashVel = -25.0f;
+    public float dashFloatDur = 0.20f;
+
+    public float colliderOffset = 0.01f;
 }

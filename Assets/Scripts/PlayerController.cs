@@ -61,12 +61,13 @@ public class PlayerController : MonoBehaviour {
         float horizontal = controls.Move.Move.ReadValue<float>();
         this.activeMoveData.UpdateDirection(horizontal);
 
-        float accel = this.IsGrounded() ? charData.hori_accel : charData.air_hori_accel;
+        float accel = this.IsGrounded() ? charData.xAccel : charData.airXAccel;
+        float maxSpeed = this.IsGrounded() ? charData.maxXSpeed : charData.maxAirXSpeed;
         float updatedXVel = body.velocity.x + horizontal * accel * Time.deltaTime;
-        if (updatedXVel > charData.max_hori_speed) {
-            updatedXVel = Mathf.Max(body.velocity.x, charData.max_hori_speed);
-        } else if (updatedXVel < -charData.max_hori_speed) {
-            updatedXVel = Mathf.Min(body.velocity.x, -charData.max_hori_speed);
+        if (updatedXVel > maxSpeed) {
+            updatedXVel = Mathf.Max(body.velocity.x, maxSpeed);
+        } else if (updatedXVel < -maxSpeed) {
+            updatedXVel = Mathf.Min(body.velocity.x, -maxSpeed);
         }
 
         body.velocity = new Vector2(updatedXVel, body.velocity.y);
@@ -76,9 +77,9 @@ public class PlayerController : MonoBehaviour {
      * Update whether to reset jumps.
      */
     void GroundUpdate() {
-        body.gravityScale = 1.0f;
         this.activeMoveData.UpdateDirection(body.velocity.x);
         if (this.IsGrounded()) {
+            body.gravityScale = 1.0f;
             this.activeMoveData.ResetJumps();
         }
     }
@@ -91,18 +92,14 @@ public class PlayerController : MonoBehaviour {
      * Perform a grounded or aerial jump if possible.
      */
     void Jump() {
-        if (this.IsGrounded()) {
-            body.velocity = new Vector2(body.velocity.x, charData.jump_vel);
-        }
+        GroundJump(this.charData.jumpVel);
     }
 
     /**
      * Perform a grounded or aerial jump if possible.
      */
     void ShortJump() {
-        if (this.IsGrounded()) {
-            body.velocity = new Vector2(body.velocity.x, charData.short_jump_vel);
-        }
+        GroundJump(this.charData.shortJumpVel);
     }
 
     /**
@@ -112,13 +109,16 @@ public class PlayerController : MonoBehaviour {
         if (!this.IsGrounded() && this.activeMoveData.AttemptJump()) {
             float horizontal = controls.Move.Move.ReadValue<float>();
 
-            // perform jump, check for alternating momentum
-            if (body.velocity.x * horizontal < 0) {
-                float newXVal = Mathf.Abs(body.velocity.x) * horizontal * this.charData.boface_modifier;
-                body.velocity = new Vector2(newXVal, charData.air_jump_vel);
-            } else {
-                body.velocity = new Vector2(body.velocity.x, charData.air_jump_vel);
+            // perform jump, apply minimum jump speed
+            float newXVal = 0.0f;
+            if (horizontal == 1) {
+                newXVal = Mathf.Max(body.velocity.x, this.charData.minAirXJumpSpeed);
+            } else if (horizontal == -1) {
+                newXVal = Mathf.Min(body.velocity.x, -this.charData.minAirXJumpSpeed);
             }
+             body.velocity = new Vector2(newXVal, charData.airJumpVel);
+        } else if (this.IsGrounded()) {
+            this.activeMoveData.edgeJump = true;
         }
     }
 
@@ -126,24 +126,44 @@ public class PlayerController : MonoBehaviour {
      *  Perform a grounded or aerial dash if possible.
      */
     void Dash() {
-        if (this.IsGrounded()) {
-            float horizontal = controls.Move.Move.ReadValue<float>();
-            bool right = true;
-            if (horizontal == 0) {
-                // no input direction default to facing direction
-                right = this.activeMoveData.facingRight;
-            } else {
-                // input direction override
-                right = horizontal > 0;
-            }
+        float horizontal = controls.Move.Move.ReadValue<float>();
+        bool right = true;
+        if (horizontal == 0) {
+            // no input direction default to facing direction
+            right = this.activeMoveData.facingRight;
+        } else {
+            right = horizontal > 0;
+        }
 
+        if (this.IsGrounded()) {
+            // ground dash
             float newXVal = 0;
             if (right) {
-                newXVal = Mathf.Max(body.velocity.x, this.charData.max_hori_speed);
+                newXVal = Mathf.Max(body.velocity.x, this.charData.maxXSpeed);
             } else {
-                newXVal = Mathf.Min(body.velocity.x, -this.charData.max_hori_speed);
+                newXVal = Mathf.Min(body.velocity.x, -this.charData.maxXSpeed);
             }
             body.velocity = new Vector2(newXVal, body.velocity.y);
+        } else if (!this.IsGrounded()) {
+            // aerial dash
+            float look = controls.Move.Look.ReadValue<float>();
+            if (look == -1 && body.velocity.y <= 0) {
+
+                this.body.gravityScale = 1.0f;
+                float newYVal = Mathf.Min(body.velocity.y, this.charData.airDownDashVel);
+                body.velocity = new Vector2(body.velocity.x, newYVal);
+            }
+
+            if (look != -1 && this.activeMoveData.AttemptJump()) {
+                float newXVal = 0;
+                if (right) {
+                    newXVal = Mathf.Max(body.velocity.x, this.charData.maxXSpeed);
+                } else {
+                    newXVal = Mathf.Min(body.velocity.x, -this.charData.maxXSpeed);
+                }
+                body.velocity = new Vector2(newXVal, 0.0f);
+                StartCoroutine(SuspendGravity(charData.dashFloatDur));
+            }
         }
     }
 
@@ -152,12 +172,22 @@ public class PlayerController : MonoBehaviour {
     ///////////////////////
 
     /**
+     * Method for performing any grounded jump.
+     */
+    private void GroundJump(float jumpVel) {
+        if (this.IsGrounded() || (!this.IsGrounded() && this.activeMoveData.edgeJump)) {
+            body.velocity = new Vector2(body.velocity.x, jumpVel);
+        }
+        this.activeMoveData.edgeJump = false;
+    }
+
+    /**
      * Get the top left collision box of this character with a small offset overlap.
      */
     private Vector2 GetGroundedTopLeft() {
         Vector2 topLeft = transform.position;
-        topLeft.x -= collider.bounds.extents.x - charData.collider_offset;
-        topLeft.y += collider.bounds.extents.y + charData.collider_offset;
+        topLeft.x -= collider.bounds.extents.x - charData.colliderOffset;
+        topLeft.y += collider.bounds.extents.y + charData.colliderOffset;
         return topLeft;
     }
 
@@ -166,8 +196,8 @@ public class PlayerController : MonoBehaviour {
      */
     private Vector2 GetGroundedBotRight() {
         Vector2 botRight = transform.position;
-        botRight.x += collider.bounds.extents.x - charData.collider_offset;
-        botRight.y -= collider.bounds.extents.y + charData.collider_offset;
+        botRight.x += collider.bounds.extents.x - charData.colliderOffset;
+        botRight.y -= collider.bounds.extents.y + charData.colliderOffset;
         return botRight;
     }
 
@@ -179,5 +209,16 @@ public class PlayerController : MonoBehaviour {
         Vector2 botRight = this.GetGroundedBotRight();
 
         return Physics2D.OverlapArea(topLeft, botRight, ground);
+    }
+
+    /**
+     * Suspends gravity for a set amount of time.
+     */
+    private IEnumerator SuspendGravity(float time) {
+        body.gravityScale = 0.0f;
+        yield return new WaitForSeconds(time);
+        body.gravityScale = 0.5f;
+        yield return new WaitForSeconds(time / 4);
+        body.gravityScale = 1.0f;
     }
 }

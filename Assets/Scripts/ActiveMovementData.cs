@@ -11,6 +11,8 @@ public class ActiveMovementData {
 
     public int curJumps = ActiveMovementData.JUMPS;
     public bool facingRight = true;
+    // boolean for keeping track of jumps started slightly before going airborne
+    public bool edgeJump = false;
 
     /**
      * Reset the total amount of jumps. Call upon landing.
