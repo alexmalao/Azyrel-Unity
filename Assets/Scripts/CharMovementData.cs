@@ -5,7 +5,9 @@ using UnityEngine;
 
 /**
  * Dataclass for storing basic physics values. Include in a player controller
- * for basic physic and collision vaues.
+ * for basic physic and collision values.
+ * 
+ * All acceleration and speed values are stored per second.
  */
 public class CharMovementData {
     
@@ -14,10 +16,12 @@ public class CharMovementData {
     public float minXSpeed = 5.0f;
     public float maxXSpeed = 15.0f;
 
+    // speed penalty for being faster than maxXSpeed
+    public float xSpeedPenalty = 2.5f;
     // percent of velocity retained each second while grounded
-    public float traction = 0.025f;
+    public float traction = 0.04f;
     // speed at which character will default stop while grounded
-    public float stopSpeed = 2.5f;
+    public float stopSpeed = 1.5f;
 
     public float jumpVel = 20f;
     public float shortJumpVel = 12.5f;

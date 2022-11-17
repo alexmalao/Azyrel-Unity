@@ -13,6 +13,8 @@ public class ActiveMovementData {
     public bool facingRight = true;
     // boolean for keeping track of jumps started slightly before going airborne
     public bool edgeJump = false;
+    // determines whether gravity should be suspended
+    public bool suspendGravity = false;
 
     /**
      * Reset the total amount of jumps. Call upon landing.

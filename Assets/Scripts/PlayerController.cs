@@ -47,7 +47,7 @@ public class PlayerController : MonoBehaviour {
 
     void Update() {
         this.MoveHorizontal();
-        this.GroundUpdate();
+        this.PhysicsUpdate();
     }
 
     //////////////////////////////////
@@ -67,16 +67,17 @@ public class PlayerController : MonoBehaviour {
         if (this.IsGrounded()) {
             // grounded movement will only trigger when already in the direction of input
             float modifiedSpeed = body.velocity.x + horizontal * charData.xAccel * Time.deltaTime;
+            float speedPenalty = charData.xSpeedPenalty * Time.deltaTime;
 
             if (horizontal == 1 && body.velocity.x > -0.001f) {
                 updatedXVel = Mathf.Max(modifiedSpeed, charData.minXSpeed);
                 if (updatedXVel > charData.maxXSpeed) {
-                    updatedXVel = Mathf.Max(body.velocity.x, charData.maxXSpeed);
+                    updatedXVel = Mathf.Max(body.velocity.x - speedPenalty, charData.maxXSpeed);
                 }
             } else if (horizontal == -1 && body.velocity.x < 0.001f) {
                 updatedXVel = Mathf.Min(modifiedSpeed, -charData.minXSpeed);
                 if (updatedXVel < -charData.maxXSpeed) {
-                    updatedXVel = Mathf.Min(body.velocity.x, -charData.maxXSpeed);
+                    updatedXVel = Mathf.Min(body.velocity.x + speedPenalty, -charData.maxXSpeed);
                 }
             } else {
                 // stop the character
@@ -90,6 +91,7 @@ public class PlayerController : MonoBehaviour {
                 }
             }
         } else if (this.IsAirborne()) {
+            // airborne movement does not apply any traction or slowdown
             float modifiedSpeed = body.velocity.x + horizontal * charData.airXAccel * Time.deltaTime;
             if (modifiedSpeed > charData.maxAirXSpeed) {
                 updatedXVel = Mathf.Min(modifiedSpeed, body.velocity.x);
@@ -107,13 +109,22 @@ public class PlayerController : MonoBehaviour {
     }
 
     /**
+     * Return the slope angle.
+     */
+    private void GetGroundedSlope() {
+        Vector2 center = this.GetColliderPos();
+    }
+
+    /**
      * Update whether to reset jumps.
      */
-    void GroundUpdate() {
+    void PhysicsUpdate() {
         if (this.IsGrounded()) {
-            body.gravityScale = 1.0f;
+            body.gravityScale = 0.0f;
             this.activeMoveData.UpdateDirection(body.velocity.x);
             this.activeMoveData.ResetJumps();
+        } else if (this.IsAirborne() && !activeMoveData.suspendGravity) {
+            body.gravityScale = 1.0f;
         }
     }
 
@@ -221,25 +232,31 @@ public class PlayerController : MonoBehaviour {
     }
 
     /**
+     * Get the bottom right collision box of this character with a small offset overlap.
+     */
+    private Vector2 GetGroundedBotRight() {
+        Vector2 botRight = this.GetColliderPos();
+        botRight.x += collider.bounds.extents.x - charData.colliderOffset;
+        botRight.y -= collider.bounds.extents.y + charData.colliderOffset;
+        return botRight;
+    }
+
+    /**
      * Get the top left collision box of this character with a small offset overlap.
      */
     private Vector2 GetGroundedTopLeft() {
-        Vector2 topLeft = transform.position;
-        topLeft += transform.lossyScale * collider.offset;
+        Vector2 topLeft = this.GetColliderPos();
         topLeft.x -= collider.bounds.extents.x - charData.colliderOffset;
-        topLeft.y += collider.bounds.extents.y + charData.colliderOffset;
+        topLeft.y += collider.bounds.extents.y - charData.colliderOffset;
         return topLeft;
     }
 
     /**
-     * Get the bottom right collision box of this character with a small offset overlap.
-     */
-    private Vector2 GetGroundedBotRight() {
-        Vector2 botRight = transform.position;
-        botRight += transform.lossyScale * collider.offset;
-        botRight.x += collider.bounds.extents.x - charData.colliderOffset;
-        botRight.y -= collider.bounds.extents.y + charData.colliderOffset;
-        return botRight;
+     * Calculate the center of the collider.
+     */ 
+    private Vector2 GetColliderPos() {
+        Vector2 position = new Vector2(transform.position.x, transform.position.y);
+        return position + transform.lossyScale * collider.offset;
     }
 
     /**
@@ -264,7 +281,8 @@ public class PlayerController : MonoBehaviour {
      */
     private IEnumerator SuspendDashGravity(float time) {
         body.gravityScale = 0.0f;
+        activeMoveData.suspendGravity = true;
         yield return new WaitForSeconds(time);
-        body.gravityScale = 1.0f;
+        activeMoveData.suspendGravity = false;
     }
 }
