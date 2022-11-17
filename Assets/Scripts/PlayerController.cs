@@ -59,15 +59,37 @@ public class PlayerController : MonoBehaviour {
      */
     void MoveHorizontal() {
         float horizontal = controls.Move.Move.ReadValue<float>();
-        this.activeMoveData.UpdateDirection(horizontal);
 
-        float accel = this.IsGrounded() ? charData.xAccel : charData.airXAccel;
-        float maxSpeed = this.IsGrounded() ? charData.maxXSpeed : charData.maxAirXSpeed;
-        float updatedXVel = body.velocity.x + horizontal * accel * Time.deltaTime;
-        if (updatedXVel > maxSpeed) {
-            updatedXVel = Mathf.Max(body.velocity.x, maxSpeed);
-        } else if (updatedXVel < -maxSpeed) {
-            updatedXVel = Mathf.Min(body.velocity.x, -maxSpeed);
+        float updatedXVel = body.velocity.x;
+        
+        if (this.IsGrounded()) {
+            // grounded movement will only trigger when already in the direction of input
+            float modifiedSpeed = body.velocity.x + horizontal * charData.xAccel * Time.deltaTime;
+
+            if (horizontal == 1 && body.velocity.x > -0.001f) {
+                updatedXVel = Mathf.Max(modifiedSpeed, charData.minXSpeed);
+                if (updatedXVel > charData.maxXSpeed) {
+                    updatedXVel = Mathf.Max(body.velocity.x, charData.maxXSpeed);
+                }
+            } else if (horizontal == -1 && body.velocity.x < 0.001f) {
+                updatedXVel = Mathf.Min(modifiedSpeed, -charData.minXSpeed);
+                if (updatedXVel < -charData.maxXSpeed) {
+                    updatedXVel = Mathf.Min(body.velocity.x, -charData.maxXSpeed);
+                }
+            } else {
+                // TODO: apply friction
+            }
+        } else if (this.IsAirborne()) {
+            float modifiedSpeed = body.velocity.x + horizontal * charData.airXAccel * Time.deltaTime;
+            if (modifiedSpeed > charData.maxAirXSpeed) {
+                updatedXVel = Mathf.Min(modifiedSpeed, body.velocity.x);
+                updatedXVel = Mathf.Max(updatedXVel, charData.maxAirXSpeed);
+            } else if (modifiedSpeed < -charData.maxAirXSpeed) {
+                updatedXVel = Mathf.Max(modifiedSpeed, body.velocity.x);
+                updatedXVel = Mathf.Min(updatedXVel, -charData.maxAirXSpeed);
+            } else {
+                updatedXVel = modifiedSpeed;
+            }
         }
 
         body.velocity = new Vector2(updatedXVel, body.velocity.y);
@@ -77,9 +99,9 @@ public class PlayerController : MonoBehaviour {
      * Update whether to reset jumps.
      */
     void GroundUpdate() {
-        this.activeMoveData.UpdateDirection(body.velocity.x);
         if (this.IsGrounded()) {
             body.gravityScale = 1.0f;
+            this.activeMoveData.UpdateDirection(body.velocity.x);
             this.activeMoveData.ResetJumps();
         }
     }
@@ -106,17 +128,17 @@ public class PlayerController : MonoBehaviour {
      * Perform an aerial jump if possible.
      */
     void AirJump() {
-        if (!this.IsGrounded() && this.activeMoveData.AttemptJump()) {
+        if (this.IsAirborne() && this.activeMoveData.AttemptJump()) {
             float horizontal = controls.Move.Move.ReadValue<float>();
 
             // perform jump, apply minimum jump speed
-            float newXVal = 0.0f;
+            float newXVal = body.velocity.x;
             if (horizontal == 1) {
                 newXVal = Mathf.Max(body.velocity.x, this.charData.minAirXJumpSpeed);
             } else if (horizontal == -1) {
                 newXVal = Mathf.Min(body.velocity.x, -this.charData.minAirXJumpSpeed);
             }
-             body.velocity = new Vector2(newXVal, charData.airJumpVel);
+            body.velocity = new Vector2(newXVal, charData.airJumpVel);
         } else if (this.IsGrounded()) {
             this.activeMoveData.edgeJump = true;
         }
@@ -144,7 +166,7 @@ public class PlayerController : MonoBehaviour {
                 newXVal = Mathf.Min(body.velocity.x, -this.charData.maxXSpeed);
             }
             body.velocity = new Vector2(newXVal, body.velocity.y);
-        } else if (!this.IsGrounded()) {
+        } else if (this.IsAirborne()) {
             // aerial dash
             float look = controls.Move.Look.ReadValue<float>();
             if (look == -1 && body.velocity.y <= 0) {
@@ -152,6 +174,7 @@ public class PlayerController : MonoBehaviour {
                 this.body.gravityScale = 1.0f;
                 float newYVal = Mathf.Min(body.velocity.y, this.charData.airDownDashVel);
                 body.velocity = new Vector2(body.velocity.x, newYVal);
+                this.activeMoveData.UpdateDirection(body.velocity.x);
             }
 
             if (look != -1 && this.activeMoveData.AttemptJump()) {
@@ -162,7 +185,8 @@ public class PlayerController : MonoBehaviour {
                     newXVal = Mathf.Min(body.velocity.x, -this.charData.maxXSpeed);
                 }
                 body.velocity = new Vector2(newXVal, 0.0f);
-                StartCoroutine(SuspendGravity(charData.dashFloatDur));
+                StartCoroutine(SuspendDashGravity(charData.dashFloatDur));
+                this.activeMoveData.UpdateDirection(body.velocity.x);
             }
         }
     }
@@ -175,7 +199,7 @@ public class PlayerController : MonoBehaviour {
      * Method for performing any grounded jump.
      */
     private void GroundJump(float jumpVel) {
-        if (this.IsGrounded() || (!this.IsGrounded() && this.activeMoveData.edgeJump)) {
+        if (this.IsGrounded() || (this.IsAirborne() && this.activeMoveData.edgeJump)) {
             body.velocity = new Vector2(body.velocity.x, jumpVel);
         }
         this.activeMoveData.edgeJump = false;
@@ -186,6 +210,7 @@ public class PlayerController : MonoBehaviour {
      */
     private Vector2 GetGroundedTopLeft() {
         Vector2 topLeft = transform.position;
+        topLeft += transform.lossyScale * collider.offset;
         topLeft.x -= collider.bounds.extents.x - charData.colliderOffset;
         topLeft.y += collider.bounds.extents.y + charData.colliderOffset;
         return topLeft;
@@ -196,6 +221,7 @@ public class PlayerController : MonoBehaviour {
      */
     private Vector2 GetGroundedBotRight() {
         Vector2 botRight = transform.position;
+        botRight += transform.lossyScale * collider.offset;
         botRight.x += collider.bounds.extents.x - charData.colliderOffset;
         botRight.y -= collider.bounds.extents.y + charData.colliderOffset;
         return botRight;
@@ -207,18 +233,25 @@ public class PlayerController : MonoBehaviour {
     private bool IsGrounded() {
         Vector2 topLeft = this.GetGroundedTopLeft();
         Vector2 botRight = this.GetGroundedBotRight();
-
         return Physics2D.OverlapArea(topLeft, botRight, ground);
+    }
+
+    /**
+     * Determine whether the player is airborne.
+     */
+    private bool IsAirborne() {
+        // TODO: ensure there is no ceiling or wallhang
+        return !this.IsGrounded();
     }
 
     /**
      * Suspends gravity for a set amount of time.
      */
-    private IEnumerator SuspendGravity(float time) {
+    private IEnumerator SuspendDashGravity(float time) {
         body.gravityScale = 0.0f;
         yield return new WaitForSeconds(time);
         body.gravityScale = 0.5f;
-        yield return new WaitForSeconds(time / 4);
+        yield return new WaitForSeconds(time / 2);
         body.gravityScale = 1.0f;
     }
 }

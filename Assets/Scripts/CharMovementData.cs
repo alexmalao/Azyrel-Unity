@@ -9,9 +9,10 @@ using UnityEngine;
  */
 public class CharMovementData {
     
-    public float xAccel = 45.0f;
-    public float airXAccel = 25.0f;
-    public float maxXSpeed = 17.5f;
+    public float xAccel = 30.0f;
+    public float airXAccel = 20.0f;
+    public float minXSpeed = 7.5f;
+    public float maxXSpeed = 15.0f;
 
     public float jumpVel = 21.5f;
     public float shortJumpVel = 14.5f;
