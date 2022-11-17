@@ -59,9 +59,11 @@ public class PlayerController : MonoBehaviour {
      */
     void MoveHorizontal() {
         float horizontal = controls.Move.Move.ReadValue<float>();
+        float look = controls.Move.Look.ReadValue<float>();
 
         float updatedXVel = body.velocity.x;
-        
+        float updatedYVel = body.velocity.y;
+
         if (this.IsGrounded()) {
             // grounded movement will only trigger when already in the direction of input
             float modifiedSpeed = body.velocity.x + horizontal * charData.xAccel * Time.deltaTime;
@@ -77,7 +79,15 @@ public class PlayerController : MonoBehaviour {
                     updatedXVel = Mathf.Min(body.velocity.x, -charData.maxXSpeed);
                 }
             } else {
-                // TODO: apply friction
+                // stop the character
+                if (Mathf.Abs(updatedXVel) < charData.stopSpeed &&
+                    Mathf.Abs(updatedYVel) < charData.stopSpeed) {
+                    updatedXVel = 0.0f;
+                    updatedYVel = 0.0f;
+                } else {
+                    updatedXVel *= Mathf.Pow(charData.traction, Time.deltaTime);
+                    updatedYVel *= Mathf.Pow(charData.traction, Time.deltaTime);
+                }
             }
         } else if (this.IsAirborne()) {
             float modifiedSpeed = body.velocity.x + horizontal * charData.airXAccel * Time.deltaTime;
@@ -91,8 +101,9 @@ public class PlayerController : MonoBehaviour {
                 updatedXVel = modifiedSpeed;
             }
         }
-
-        body.velocity = new Vector2(updatedXVel, body.velocity.y);
+        
+        // apply the new velocity
+        body.velocity = new Vector2(updatedXVel, updatedYVel);
     }
 
     /**
@@ -134,9 +145,9 @@ public class PlayerController : MonoBehaviour {
             // perform jump, apply minimum jump speed
             float newXVal = body.velocity.x;
             if (horizontal == 1) {
-                newXVal = Mathf.Max(body.velocity.x, this.charData.minAirXJumpSpeed);
+                newXVal = Mathf.Max(body.velocity.x, this.charData.minAirJumpXSpeed);
             } else if (horizontal == -1) {
-                newXVal = Mathf.Min(body.velocity.x, -this.charData.minAirXJumpSpeed);
+                newXVal = Mathf.Min(body.velocity.x, -this.charData.minAirJumpXSpeed);
             }
             body.velocity = new Vector2(newXVal, charData.airJumpVel);
         } else if (this.IsGrounded()) {
@@ -199,8 +210,12 @@ public class PlayerController : MonoBehaviour {
      * Method for performing any grounded jump.
      */
     private void GroundJump(float jumpVel) {
+        Debug.Log("performed grounded jump");
         if (this.IsGrounded() || (this.IsAirborne() && this.activeMoveData.edgeJump)) {
+
+            jumpVel = Mathf.Max(jumpVel, body.velocity.y);
             body.velocity = new Vector2(body.velocity.x, jumpVel);
+            Debug.Log(body.velocity.y);
         }
         this.activeMoveData.edgeJump = false;
     }
@@ -250,8 +265,6 @@ public class PlayerController : MonoBehaviour {
     private IEnumerator SuspendDashGravity(float time) {
         body.gravityScale = 0.0f;
         yield return new WaitForSeconds(time);
-        body.gravityScale = 0.5f;
-        yield return new WaitForSeconds(time / 2);
         body.gravityScale = 1.0f;
     }
 }
