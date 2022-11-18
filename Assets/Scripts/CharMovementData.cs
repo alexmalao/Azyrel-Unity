@@ -36,5 +36,5 @@ public class CharMovementData {
     public float dashFloatDur = 0.25f;
 
     public float raycastDown = 1.1f;
-    public float raycastDownSlope = 2.0f;
+    public float raycastDownSlope = 2.1f;
 }

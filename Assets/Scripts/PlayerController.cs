@@ -62,73 +62,16 @@ public class PlayerController : MonoBehaviour {
         float horizontal = controls.Move.Move.ReadValue<float>();
         float look = controls.Move.Look.ReadValue<float>();
 
-        float updatedXVel = body.velocity.x;
-        float updatedYVel = body.velocity.y;
+        Vector2 newVelocity;
 
         if (this.IsGrounded() || this.activeMoveData.lastFrameGrounded) {
-
-            // executing jump or land, steepest grounded state is 45 degrees
-            if (Math.Abs(body.velocity.y) > Mathf.Abs(body.velocity.x) + 0.01f) {
-                return;
-            }
-
-            float relativeMagnitude = body.velocity.magnitude;
-            // get magnitude respective to x direction
-            if (body.velocity.x < 0) {
-                relativeMagnitude *= -1;
-            }
-
-            Vector2 slopeVector;
-            try {
-                slopeVector = this.GetSlopeVector();
-            } catch (InvalidOperationException) {
-                return;
-            }
-            float modifiedVelocity = relativeMagnitude + horizontal * charData.groundAccel * Time.deltaTime;
-            float speedPenalty = charData.groundSpeedPenalty * Time.deltaTime;
-
-            // grounded movement will only trigger when already in the direction of input
-            if (horizontal == 1 && body.velocity.x > -0.001f) {
-                modifiedVelocity = Mathf.Max(modifiedVelocity, charData.minGroundSpeed);
-                if (modifiedVelocity > charData.maxGroundSpeed) {
-                    modifiedVelocity = Mathf.Max(relativeMagnitude - speedPenalty, charData.maxGroundSpeed);
-                }
-                updatedXVel = modifiedVelocity * slopeVector.x;
-                updatedYVel = modifiedVelocity * slopeVector.y;
-            } else if (horizontal == -1 && body.velocity.x < 0.001f) {
-                modifiedVelocity = Mathf.Min(modifiedVelocity, -charData.minGroundSpeed);
-                if (modifiedVelocity < -charData.maxGroundSpeed) {
-                    modifiedVelocity = Mathf.Min(relativeMagnitude + speedPenalty, -charData.maxGroundSpeed);
-                }
-                updatedXVel = modifiedVelocity * slopeVector.x;
-                updatedYVel = modifiedVelocity * slopeVector.y;
-            } else {
-                // stop the character
-                if (Mathf.Abs(updatedXVel) < charData.stopSpeed &&
-                    Mathf.Abs(updatedYVel) < charData.stopSpeed) {
-                    updatedXVel = 0.0f;
-                    updatedYVel = 0.0f;
-                } else {
-                    updatedXVel *= Mathf.Pow(charData.traction, Time.deltaTime);
-                    updatedYVel *= Mathf.Pow(charData.traction, Time.deltaTime);
-                }
-            }
+            newVelocity = this.MoveGrounded(horizontal);
         } else {
-            // airborne movement does not apply any traction or slowdown
-            float modifiedSpeed = body.velocity.x + horizontal * charData.airXAccel * Time.deltaTime;
-            if (modifiedSpeed > charData.maxAirXSpeed) {
-                updatedXVel = Mathf.Min(modifiedSpeed, body.velocity.x);
-                updatedXVel = Mathf.Max(updatedXVel, charData.maxAirXSpeed);
-            } else if (modifiedSpeed < -charData.maxAirXSpeed) {
-                updatedXVel = Mathf.Max(modifiedSpeed, body.velocity.x);
-                updatedXVel = Mathf.Min(updatedXVel, -charData.maxAirXSpeed);
-            } else {
-                updatedXVel = modifiedSpeed;
-            }
+            newVelocity = this.MoveAirborne(horizontal);
         }
 
         // apply the new velocity
-        body.velocity = new Vector2(updatedXVel, updatedYVel);
+        body.velocity = newVelocity;
     }
 
     /**
@@ -200,7 +143,7 @@ public class PlayerController : MonoBehaviour {
 
         if (this.IsGrounded()) {
             // ground dash
-            float newVelocity = 0;
+            float newVelocity;
             float magnitude = body.velocity.magnitude;
 
             // executing land, revoking landing magnitude
@@ -215,7 +158,7 @@ public class PlayerController : MonoBehaviour {
                 newVelocity = Mathf.Min(-magnitude, -this.charData.maxGroundSpeed);
             }
             body.velocity = new Vector2(newVelocity * slopeVector.x, newVelocity * slopeVector.y);
-        } else if (this.IsAirborne()) {
+        } else if (this.IsAirborne() && !this.activeMoveData.lastFrameGrounded) {
             // aerial dash
             float look = controls.Move.Look.ReadValue<float>();
             if (look == -1 && body.velocity.y <= 0) {
@@ -227,7 +170,7 @@ public class PlayerController : MonoBehaviour {
             }
 
             if (look != -1 && this.activeMoveData.AttemptJump()) {
-                float newXVal = 0;
+                float newXVal;
                 if (right) {
                     newXVal = Mathf.Max(body.velocity.x, this.charData.maxGroundSpeed);
                 } else {
@@ -243,6 +186,87 @@ public class PlayerController : MonoBehaviour {
     ///////////////////////
     /// Utilty Methods. ///
     ///////////////////////
+
+    /**
+     * Get the velocity vector for grounded movement.
+     */
+    private Vector2 MoveGrounded(float horizontal) {
+
+        float updatedXVel = body.velocity.x;
+        float updatedYVel = body.velocity.y;
+
+        // executing jump or land, steepest grounded state is 45 degrees
+        if (Math.Abs(body.velocity.y) > Mathf.Abs(body.velocity.x) + 0.01f) {
+            return body.velocity;
+        }
+
+        float relativeMagnitude = body.velocity.magnitude;
+        // get magnitude respective to x direction
+        if (body.velocity.x < 0) {
+            relativeMagnitude *= -1;
+        }
+
+        Vector2 slopeVector;
+        try {
+            slopeVector = this.GetSlopeVector();
+        }
+        catch (InvalidOperationException) {
+            return body.velocity;
+        }
+        float modifiedVelocity = relativeMagnitude + horizontal * charData.groundAccel * Time.deltaTime;
+        float speedPenalty = charData.groundSpeedPenalty * Time.deltaTime;
+
+        // grounded movement will only trigger when already in the direction of input
+        if (horizontal == 1 && body.velocity.x > -0.001f) {
+            modifiedVelocity = Mathf.Max(modifiedVelocity, charData.minGroundSpeed);
+            if (modifiedVelocity > charData.maxGroundSpeed) {
+                modifiedVelocity = Mathf.Max(relativeMagnitude - speedPenalty, charData.maxGroundSpeed);
+            }
+            return new Vector2(modifiedVelocity * slopeVector.x, modifiedVelocity * slopeVector.y);
+        }
+        else if (horizontal == -1 && body.velocity.x < 0.001f) {
+            modifiedVelocity = Mathf.Min(modifiedVelocity, -charData.minGroundSpeed);
+            if (modifiedVelocity < -charData.maxGroundSpeed) {
+                modifiedVelocity = Mathf.Min(relativeMagnitude + speedPenalty, -charData.maxGroundSpeed);
+            }
+            return new Vector2(modifiedVelocity * slopeVector.x, modifiedVelocity * slopeVector.y);
+        }
+        else {
+            // stop the character
+            if (Mathf.Abs(body.velocity.x) < charData.stopSpeed &&
+                Mathf.Abs(body.velocity.y) < charData.stopSpeed) {
+                return new Vector2(0.0f, 0.0f);
+            }
+            else {
+                return new Vector2(
+                    body.velocity.x * Mathf.Pow(charData.traction, Time.deltaTime),
+                    body.velocity.y * Mathf.Pow(charData.traction, Time.deltaTime));
+            }
+        }
+    }
+
+    /**
+     * Get the velocity vector for airborne movement.
+     */
+    private Vector2 MoveAirborne(float horizontal) {
+        float updatedXVel;
+
+        // airborne movement does not apply any traction or slowdown
+        float modifiedSpeed = body.velocity.x + horizontal * charData.airXAccel * Time.deltaTime;
+        if (modifiedSpeed > charData.maxAirXSpeed) {
+            updatedXVel = Mathf.Min(modifiedSpeed, body.velocity.x);
+            updatedXVel = Mathf.Max(updatedXVel, charData.maxAirXSpeed);
+        }
+        else if (modifiedSpeed < -charData.maxAirXSpeed) {
+            updatedXVel = Mathf.Max(modifiedSpeed, body.velocity.x);
+            updatedXVel = Mathf.Min(updatedXVel, -charData.maxAirXSpeed);
+        }
+        else {
+            updatedXVel = modifiedSpeed;
+        }
+
+        return new Vector2(updatedXVel, body.velocity.y);
+    }
 
     /**
      * Method for performing any grounded jump.

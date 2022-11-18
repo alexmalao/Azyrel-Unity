@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 8a02b1fb6b1aaf54a9f66321094551ed
+guid: 8e809501738f02644a266e3c0f64f7d8
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -166,12 +166,10 @@ TextureImporter:
       weights: []
     outline:
     - - {x: 128, y: 128}
-      - {x: -128, y: -0.0000055950577}
       - {x: -128, y: -128}
       - {x: 128, y: -128}
     physicsShape:
-    - - {x: -128, y: -2}
-      - {x: -128, y: -128}
+    - - {x: -128, y: -128}
       - {x: 128, y: -128}
       - {x: 128, y: 128}
     bones: []
