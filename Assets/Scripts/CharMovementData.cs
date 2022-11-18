@@ -35,6 +35,6 @@ public class CharMovementData {
     public float airDownDashVel = -15.0f;
     public float dashFloatDur = 0.25f;
 
-    public float raycastDown = 1.35f;
-    public float raycastDownSlope = 2.1f;
+    public float raycastDown = 1.1f;
+    public float raycastDownSlope = 2.0f;
 }

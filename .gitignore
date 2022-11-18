@@ -3,4 +3,7 @@ Logs/
 Packages/
 Temp/
 UserSettings/
+.vs/
+.vsconfig
+obj/
 

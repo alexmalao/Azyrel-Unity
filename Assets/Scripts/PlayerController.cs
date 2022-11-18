@@ -65,7 +65,7 @@ public class PlayerController : MonoBehaviour {
         float updatedXVel = body.velocity.x;
         float updatedYVel = body.velocity.y;
 
-        if (this.IsGrounded()) {
+        if (this.IsGrounded() || this.activeMoveData.lastFrameGrounded) {
 
             // executing jump or land, steepest grounded state is 45 degrees
             if (Math.Abs(body.velocity.y) > Mathf.Abs(body.velocity.x) + 0.01f) {
@@ -78,7 +78,12 @@ public class PlayerController : MonoBehaviour {
                 relativeMagnitude *= -1;
             }
 
-            Vector2 slopeVector = this.GetSlopeVector();
+            Vector2 slopeVector;
+            try {
+                slopeVector = this.GetSlopeVector();
+            } catch (InvalidOperationException) {
+                return;
+            }
             float modifiedVelocity = relativeMagnitude + horizontal * charData.groundAccel * Time.deltaTime;
             float speedPenalty = charData.groundSpeedPenalty * Time.deltaTime;
 
@@ -130,13 +135,16 @@ public class PlayerController : MonoBehaviour {
      * Update whether to reset jumps.
      */
     void PhysicsUpdate() {
-        if (this.IsGrounded()) {
+        bool isGrounded = this.IsGrounded();
+        if (isGrounded) {
             body.gravityScale = 0.0f;
             this.activeMoveData.UpdateDirection(body.velocity.x);
             this.activeMoveData.ResetJumps();
         } else if (!activeMoveData.suspendGravity) {
             body.gravityScale = 1.0f;
         }
+        Debug.Log(isGrounded);
+        this.activeMoveData.lastFrameGrounded = isGrounded;
     }
 
     ////////////////////////////////////////
@@ -293,8 +301,7 @@ public class PlayerController : MonoBehaviour {
         } else if (raycasts[1]) {
             return this.GetSlopeVectorFromHit(raycasts[1]);
         }
-        throw new InvalidOperationException("GetSlopeVector may not be called " +
-            "during non-grounded state");
+        throw new InvalidOperationException("No raycasts are hit, position is airborne");
     }
 
     /**
