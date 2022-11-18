@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -65,20 +66,37 @@ public class PlayerController : MonoBehaviour {
         float updatedYVel = body.velocity.y;
 
         if (this.IsGrounded()) {
-            // grounded movement will only trigger when already in the direction of input
-            float modifiedSpeed = body.velocity.x + horizontal * charData.xAccel * Time.deltaTime;
-            float speedPenalty = charData.xSpeedPenalty * Time.deltaTime;
 
+            // executing jump or land, steepest grounded state is 45 degrees
+            if (Math.Abs(body.velocity.y) > Mathf.Abs(body.velocity.x) + 0.01f) {
+                return;
+            }
+
+            float relativeMagnitude = body.velocity.magnitude;
+            // get magnitude respective to x direction
+            if (body.velocity.x < 0) {
+                relativeMagnitude *= -1;
+            }
+
+            Vector2 slopeVector = this.GetSlopeVector();
+            float modifiedVelocity = relativeMagnitude + horizontal * charData.groundAccel * Time.deltaTime;
+            float speedPenalty = charData.groundSpeedPenalty * Time.deltaTime;
+
+            // grounded movement will only trigger when already in the direction of input
             if (horizontal == 1 && body.velocity.x > -0.001f) {
-                updatedXVel = Mathf.Max(modifiedSpeed, charData.minXSpeed);
-                if (updatedXVel > charData.maxXSpeed) {
-                    updatedXVel = Mathf.Max(body.velocity.x - speedPenalty, charData.maxXSpeed);
+                modifiedVelocity = Mathf.Max(modifiedVelocity, charData.minGroundSpeed);
+                if (modifiedVelocity > charData.maxGroundSpeed) {
+                    modifiedVelocity = Mathf.Max(relativeMagnitude - speedPenalty, charData.maxGroundSpeed);
                 }
+                updatedXVel = modifiedVelocity * slopeVector.x;
+                updatedYVel = modifiedVelocity * slopeVector.y;
             } else if (horizontal == -1 && body.velocity.x < 0.001f) {
-                updatedXVel = Mathf.Min(modifiedSpeed, -charData.minXSpeed);
-                if (updatedXVel < -charData.maxXSpeed) {
-                    updatedXVel = Mathf.Min(body.velocity.x + speedPenalty, -charData.maxXSpeed);
+                modifiedVelocity = Mathf.Min(modifiedVelocity, -charData.minGroundSpeed);
+                if (modifiedVelocity < -charData.maxGroundSpeed) {
+                    modifiedVelocity = Mathf.Min(relativeMagnitude + speedPenalty, -charData.maxGroundSpeed);
                 }
+                updatedXVel = modifiedVelocity * slopeVector.x;
+                updatedYVel = modifiedVelocity * slopeVector.y;
             } else {
                 // stop the character
                 if (Mathf.Abs(updatedXVel) < charData.stopSpeed &&
@@ -90,7 +108,7 @@ public class PlayerController : MonoBehaviour {
                     updatedYVel *= Mathf.Pow(charData.traction, Time.deltaTime);
                 }
             }
-        } else if (this.IsAirborne()) {
+        } else {
             // airborne movement does not apply any traction or slowdown
             float modifiedSpeed = body.velocity.x + horizontal * charData.airXAccel * Time.deltaTime;
             if (modifiedSpeed > charData.maxAirXSpeed) {
@@ -103,16 +121,9 @@ public class PlayerController : MonoBehaviour {
                 updatedXVel = modifiedSpeed;
             }
         }
-        
+
         // apply the new velocity
         body.velocity = new Vector2(updatedXVel, updatedYVel);
-    }
-
-    /**
-     * Return the slope angle.
-     */
-    private void GetGroundedSlope() {
-        Vector2 center = this.GetColliderPos();
     }
 
     /**
@@ -123,7 +134,7 @@ public class PlayerController : MonoBehaviour {
             body.gravityScale = 0.0f;
             this.activeMoveData.UpdateDirection(body.velocity.x);
             this.activeMoveData.ResetJumps();
-        } else if (this.IsAirborne() && !activeMoveData.suspendGravity) {
+        } else if (!activeMoveData.suspendGravity) {
             body.gravityScale = 1.0f;
         }
     }
@@ -181,13 +192,21 @@ public class PlayerController : MonoBehaviour {
 
         if (this.IsGrounded()) {
             // ground dash
-            float newXVal = 0;
-            if (right) {
-                newXVal = Mathf.Max(body.velocity.x, this.charData.maxXSpeed);
-            } else {
-                newXVal = Mathf.Min(body.velocity.x, -this.charData.maxXSpeed);
+            float newVelocity = 0;
+            float magnitude = body.velocity.magnitude;
+
+            // executing land, revoking landing magnitude
+            if (Math.Abs(body.velocity.y) > Mathf.Abs(body.velocity.x) + 0.01f) {
+                magnitude = 0;
             }
-            body.velocity = new Vector2(newXVal, body.velocity.y);
+
+            Vector2 slopeVector = this.GetSlopeVector();
+            if (right) {
+                newVelocity = Mathf.Max(magnitude, this.charData.maxGroundSpeed);
+            } else {
+                newVelocity = Mathf.Min(-magnitude, -this.charData.maxGroundSpeed);
+            }
+            body.velocity = new Vector2(newVelocity * slopeVector.x, newVelocity * slopeVector.y);
         } else if (this.IsAirborne()) {
             // aerial dash
             float look = controls.Move.Look.ReadValue<float>();
@@ -202,9 +221,9 @@ public class PlayerController : MonoBehaviour {
             if (look != -1 && this.activeMoveData.AttemptJump()) {
                 float newXVal = 0;
                 if (right) {
-                    newXVal = Mathf.Max(body.velocity.x, this.charData.maxXSpeed);
+                    newXVal = Mathf.Max(body.velocity.x, this.charData.maxGroundSpeed);
                 } else {
-                    newXVal = Mathf.Min(body.velocity.x, -this.charData.maxXSpeed);
+                    newXVal = Mathf.Min(body.velocity.x, -this.charData.maxGroundSpeed);
                 }
                 body.velocity = new Vector2(newXVal, 0.0f);
                 StartCoroutine(SuspendDashGravity(charData.dashFloatDur));
@@ -221,39 +240,18 @@ public class PlayerController : MonoBehaviour {
      * Method for performing any grounded jump.
      */
     private void GroundJump(float jumpVel) {
-        Debug.Log("performed grounded jump");
-        if (this.IsGrounded() || (this.IsAirborne() && this.activeMoveData.edgeJump)) {
+        bool isGrounded = this.IsGrounded();
+        if (isGrounded || (!isGrounded && this.activeMoveData.edgeJump)) {
 
             jumpVel = Mathf.Max(jumpVel, body.velocity.y);
             body.velocity = new Vector2(body.velocity.x, jumpVel);
-            Debug.Log(body.velocity.y);
         }
         this.activeMoveData.edgeJump = false;
     }
 
     /**
-     * Get the bottom right collision box of this character with a small offset overlap.
-     */
-    private Vector2 GetGroundedBotRight() {
-        Vector2 botRight = this.GetColliderPos();
-        botRight.x += collider.bounds.extents.x - charData.colliderOffset;
-        botRight.y -= collider.bounds.extents.y + charData.colliderOffset;
-        return botRight;
-    }
-
-    /**
-     * Get the top left collision box of this character with a small offset overlap.
-     */
-    private Vector2 GetGroundedTopLeft() {
-        Vector2 topLeft = this.GetColliderPos();
-        topLeft.x -= collider.bounds.extents.x - charData.colliderOffset;
-        topLeft.y += collider.bounds.extents.y - charData.colliderOffset;
-        return topLeft;
-    }
-
-    /**
      * Calculate the center of the collider.
-     */ 
+     */
     private Vector2 GetColliderPos() {
         Vector2 position = new Vector2(transform.position.x, transform.position.y);
         return position + transform.lossyScale * collider.offset;
@@ -263,9 +261,63 @@ public class PlayerController : MonoBehaviour {
      * Determine whether the player is grounded.
      */
     private bool IsGrounded() {
-        Vector2 topLeft = this.GetGroundedTopLeft();
-        Vector2 botRight = this.GetGroundedBotRight();
-        return Physics2D.OverlapArea(topLeft, botRight, ground);
+        List<RaycastHit2D> raycasts = this.MakeDownRaycasts(charData.raycastDown);
+        RaycastHit2D bestHit;
+        if (raycasts[0]) {
+            if (raycasts[0].normal.y >= raycasts[0].normal.x - 1) {
+                return true;
+            }
+        } else if (raycasts[1]) {
+            if (raycasts[1].normal.y >= raycasts[1].normal.x - 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return the slope angle.
+     * 
+     * Also has the side effect of snapping the transform position to the ground's raycast hit point.
+     */
+    private Vector2 GetSlopeVector() {
+        List<RaycastHit2D> raycasts = this.MakeDownRaycasts(charData.raycastDownSlope);
+        // snap player to the ground if both raycasts are hit
+        if (raycasts[0] && raycasts[1]) {
+            RaycastHit2D higher = raycasts[0].point.y > raycasts[1].point.y ? raycasts[0] : raycasts[1];
+            transform.position = new Vector2(transform.position.x,
+                higher.point.y + transform.lossyScale.y / 2);
+            return this.GetSlopeVectorFromHit(higher);
+        } else if (raycasts[0]) {
+            return this.GetSlopeVectorFromHit(raycasts[0]);
+        } else if (raycasts[1]) {
+            return this.GetSlopeVectorFromHit(raycasts[1]);
+        }
+        throw new InvalidOperationException("GetSlopeVector may not be called " +
+            "during non-grounded state");
+    }
+
+    /**
+     * Create down raycasts for the left and right of this transform.
+     */
+    private List<RaycastHit2D> MakeDownRaycasts(float raycastLength) {
+        Vector2 colliderPosLeft = this.GetColliderPos();
+        colliderPosLeft.x -= collider.bounds.extents.x;
+        Vector2 colliderPosRight = this.GetColliderPos();
+        colliderPosRight.x += collider.bounds.extents.x;
+        return new List<RaycastHit2D> {
+            Physics2D.Raycast(colliderPosLeft, Vector2.down, raycastLength, ground),
+            Physics2D.Raycast(colliderPosRight, Vector2.down, raycastLength, ground)
+        };
+    }
+
+    private Vector2 GetSlopeVectorFromHit(RaycastHit2D hit) {
+        Debug.DrawRay(hit.point, hit.normal, Color.red);
+        Vector2 slopeVector = Vector2.Perpendicular(hit.normal);
+        if (slopeVector.x < 0) {
+            slopeVector *= -1;
+        }
+        return slopeVector.normalized;
     }
 
     /**

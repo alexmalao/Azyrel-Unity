@@ -10,6 +10,7 @@ public class ActiveMovementData {
     public static int JUMPS = 1;
 
     public int curJumps = ActiveMovementData.JUMPS;
+    public bool lastGrounded = true;
     public bool facingRight = true;
     // boolean for keeping track of jumps started slightly before going airborne
     public bool edgeJump = false;
