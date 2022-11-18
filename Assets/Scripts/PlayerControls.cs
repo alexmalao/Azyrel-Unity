@@ -29,21 +29,21 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
             ""actions"": [
                 {
                     ""name"": ""Move"",
-                    ""type"": ""PassThrough"",
+                    ""type"": ""Value"",
                     ""id"": ""11a4925f-58ce-4fa6-aa77-d82cd41898d2"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
-                    ""initialStateCheck"": false
+                    ""initialStateCheck"": true
                 },
                 {
                     ""name"": ""Look"",
-                    ""type"": ""PassThrough"",
+                    ""type"": ""Value"",
                     ""id"": ""7d0c395d-895d-4e9d-a431-a136b05fdba3"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
-                    ""initialStateCheck"": false
+                    ""initialStateCheck"": true
                 },
                 {
                     ""name"": ""Jump"",
@@ -61,15 +61,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": ""Tap(duration=0.1)"",
-                    ""initialStateCheck"": false
-                },
-                {
-                    ""name"": ""AirJump"",
-                    ""type"": ""Button"",
-                    ""id"": ""703bbc9c-aaf9-47de-ab35-70730216bcc4"",
-                    ""expectedControlType"": ""Button"",
-                    ""processors"": """",
-                    ""interactions"": """",
                     ""initialStateCheck"": false
                 },
                 {
@@ -139,17 +130,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": """",
-                    ""id"": ""91b2f4b1-3b11-4fd8-90d3-2f78c9e7020c"",
-                    ""path"": ""<Keyboard>/space"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""AirJump"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
                     ""name"": ""Vertical"",
                     ""id"": ""e2a28eff-107c-4e54-b8e8-440dfdb71e73"",
                     ""path"": ""1DAxis"",
@@ -172,7 +152,7 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
-                    ""name"": ""negative"",
+                    ""name"": ""positive"",
                     ""id"": ""9bf97959-a0bb-4a85-bafd-7bba980dbbda"",
                     ""path"": ""<Keyboard>/w"",
                     ""interactions"": """",
@@ -204,7 +184,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         m_Move_Look = m_Move.FindAction("Look", throwIfNotFound: true);
         m_Move_Jump = m_Move.FindAction("Jump", throwIfNotFound: true);
         m_Move_ShortJump = m_Move.FindAction("ShortJump", throwIfNotFound: true);
-        m_Move_AirJump = m_Move.FindAction("AirJump", throwIfNotFound: true);
         m_Move_Dash = m_Move.FindAction("Dash", throwIfNotFound: true);
     }
 
@@ -269,7 +248,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
     private readonly InputAction m_Move_Look;
     private readonly InputAction m_Move_Jump;
     private readonly InputAction m_Move_ShortJump;
-    private readonly InputAction m_Move_AirJump;
     private readonly InputAction m_Move_Dash;
     public struct MoveActions
     {
@@ -279,7 +257,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         public InputAction @Look => m_Wrapper.m_Move_Look;
         public InputAction @Jump => m_Wrapper.m_Move_Jump;
         public InputAction @ShortJump => m_Wrapper.m_Move_ShortJump;
-        public InputAction @AirJump => m_Wrapper.m_Move_AirJump;
         public InputAction @Dash => m_Wrapper.m_Move_Dash;
         public InputActionMap Get() { return m_Wrapper.m_Move; }
         public void Enable() { Get().Enable(); }
@@ -302,9 +279,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 @ShortJump.started -= m_Wrapper.m_MoveActionsCallbackInterface.OnShortJump;
                 @ShortJump.performed -= m_Wrapper.m_MoveActionsCallbackInterface.OnShortJump;
                 @ShortJump.canceled -= m_Wrapper.m_MoveActionsCallbackInterface.OnShortJump;
-                @AirJump.started -= m_Wrapper.m_MoveActionsCallbackInterface.OnAirJump;
-                @AirJump.performed -= m_Wrapper.m_MoveActionsCallbackInterface.OnAirJump;
-                @AirJump.canceled -= m_Wrapper.m_MoveActionsCallbackInterface.OnAirJump;
                 @Dash.started -= m_Wrapper.m_MoveActionsCallbackInterface.OnDash;
                 @Dash.performed -= m_Wrapper.m_MoveActionsCallbackInterface.OnDash;
                 @Dash.canceled -= m_Wrapper.m_MoveActionsCallbackInterface.OnDash;
@@ -324,9 +298,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
                 @ShortJump.started += instance.OnShortJump;
                 @ShortJump.performed += instance.OnShortJump;
                 @ShortJump.canceled += instance.OnShortJump;
-                @AirJump.started += instance.OnAirJump;
-                @AirJump.performed += instance.OnAirJump;
-                @AirJump.canceled += instance.OnAirJump;
                 @Dash.started += instance.OnDash;
                 @Dash.performed += instance.OnDash;
                 @Dash.canceled += instance.OnDash;
@@ -340,7 +311,6 @@ public partial class @PlayerControls : IInputActionCollection2, IDisposable
         void OnLook(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
         void OnShortJump(InputAction.CallbackContext context);
-        void OnAirJump(InputAction.CallbackContext context);
         void OnDash(InputAction.CallbackContext context);
     }
 }

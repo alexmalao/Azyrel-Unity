@@ -7,21 +7,21 @@
             "actions": [
                 {
                     "name": "Move",
-                    "type": "PassThrough",
+                    "type": "Value",
                     "id": "11a4925f-58ce-4fa6-aa77-d82cd41898d2",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "Look",
-                    "type": "PassThrough",
+                    "type": "Value",
                     "id": "7d0c395d-895d-4e9d-a431-a136b05fdba3",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "Jump",
@@ -39,15 +39,6 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "Tap(duration=0.1)",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "AirJump",
-                    "type": "Button",
-                    "id": "703bbc9c-aaf9-47de-ab35-70730216bcc4",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
                     "initialStateCheck": false
                 },
                 {
@@ -117,17 +108,6 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "",
-                    "id": "91b2f4b1-3b11-4fd8-90d3-2f78c9e7020c",
-                    "path": "<Keyboard>/space",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "AirJump",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
                     "name": "Vertical",
                     "id": "e2a28eff-107c-4e54-b8e8-440dfdb71e73",
                     "path": "1DAxis",
@@ -150,7 +130,7 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "negative",
+                    "name": "positive",
                     "id": "9bf97959-a0bb-4a85-bafd-7bba980dbbda",
                     "path": "<Keyboard>/w",
                     "interactions": "",
