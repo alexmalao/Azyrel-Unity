@@ -24,7 +24,7 @@ public class PlayerController : MonoBehaviour {
 
     private void Awake() {
         this.controls = new PlayerControls();
-        this.charProps = new CharProps();
+        this.charProps = CharProps.CreateInstance<CharProps>();
         this.moveData = CharMovementData.CreateInstance<CharMovementData>();
 
         this.body = GetComponent<Rigidbody2D>();
@@ -112,13 +112,12 @@ public class PlayerController : MonoBehaviour {
         }
 
         // only attach to the wall if there is a towards input
-        if (this.IsTouchingRightWall() && horizontal == 1) {
+        if (this.IsTouchingRightWall() && horizontal == 1 && !this.moveData.wallVaulted) {
             this.moveData.onRightWall = true;
             body.gravityScale = 0.0f;
         } else if (!this.IsTouchingRightWall()) {
             this.moveData.onRightWall = false;
         }
-        Debug.Log(this.moveData.onRightWall);
         this.moveData.lastFrameGrounded = isGrounded;
     }
 
@@ -144,7 +143,11 @@ public class PlayerController : MonoBehaviour {
      * Perform an aerial jump if possible.
      */
     void InstantJump() {
-        if (this.IsAirborne() && this.moveData.AttemptJump()) {
+        if (this.moveData.onRightWall && !this.IsGrounded()) {
+            body.velocity = charProps.wallJumpVector * charProps.wallJumpSpeed;
+            StartCoroutine(this.WallVault());
+            this.moveData.onRightWall = false;
+        } else if (this.IsAirborne() && this.moveData.AttemptJump()) {
             float horizontal = controls.Move.Move.ReadValue<float>();
 
             // perform jump, apply minimum jump speed
@@ -173,7 +176,14 @@ public class PlayerController : MonoBehaviour {
             right = horizontal > 0;
         }
 
-        if (this.IsGrounded()) {
+        if (this.moveData.onRightWall && !this.IsGrounded()) {
+            // dash off a wall
+            body.velocity = new Vector2(-charProps.maxGroundSpeed, 0.0f);
+            StartCoroutine(this.WallVault());
+            StartCoroutine(SuspendDashGravity(charProps.dashFloatDur));
+            this.moveData.onRightWall = false;
+        }
+        else if (this.IsGrounded()) {
             // ground dash
             float newVelocity;
             float magnitude = body.velocity.magnitude;
@@ -190,6 +200,9 @@ public class PlayerController : MonoBehaviour {
                 newVelocity = Mathf.Min(-magnitude, -this.charProps.maxGroundSpeed);
             }
             body.velocity = new Vector2(newVelocity * slopeVector.x, newVelocity * slopeVector.y);
+            if (Mathf.Abs(slopeVector.y) < 0.01f) {
+                StartCoroutine(SuspendDashGravity(charProps.dashFloatDur));
+            }
         } else if (this.IsAirborne() && !this.moveData.lastFrameGrounded) {
             // aerial dash
             float look = controls.Move.Look.ReadValue<float>();
@@ -314,10 +327,11 @@ public class PlayerController : MonoBehaviour {
      */
     private void GroundJump(float jumpVel) {
         bool isGrounded = this.IsGrounded();
-        if (isGrounded || (!isGrounded && this.moveData.edgeJump)) {
+        if (isGrounded || this.moveData.edgeJump) {
 
             jumpVel = Mathf.Max(jumpVel, body.velocity.y);
             body.velocity = new Vector2(body.velocity.x, jumpVel);
+            this.moveData.suspendGravity = false;
         }
         this.moveData.edgeJump = false;
     }
@@ -345,10 +359,10 @@ public class PlayerController : MonoBehaviour {
         List<RaycastHit2D> raycasts = this.MakeHorizontalRaycasts(charProps.raycastHorizontal, Vector2.right);
         if (raycasts[0]) {
             Vector2 slopeVector = GetSlopeVectorFromHit(raycasts[0]);
-            return slopeVector.y > slopeVector.x + 0.01f;
+            return Mathf.Abs(slopeVector.y) > slopeVector.x + 0.01f;
         } else if (raycasts[1]) {
             Vector2 slopeVector = GetSlopeVectorFromHit(raycasts[1]);
-            return slopeVector.y > slopeVector.x + 0.01f;
+            return Mathf.Abs(slopeVector.y) > slopeVector.x + 0.01f;
         }
         return false;
     }
@@ -430,5 +444,14 @@ public class PlayerController : MonoBehaviour {
         moveData.suspendGravity = true;
         yield return new WaitForSeconds(time);
         moveData.suspendGravity = false;
+    }
+    
+    /**
+     * Vault off the wall, preventing immediate wall cling.
+     */
+    private IEnumerator WallVault() {
+        this.moveData.wallVaulted = true;
+        yield return new WaitForSeconds(charProps.wallVaultDur);
+        this.moveData.wallVaulted = false;
     }
 }

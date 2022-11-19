@@ -16,6 +16,7 @@ public class CharMovementData : ScriptableObject {
     public bool hasWallRun = true;
     public bool facingRight = true;
     public bool onRightWall = false;
+    public bool wallVaulted = false;
 
     ////////////////////
     /// Logic Values ///
