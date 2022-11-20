@@ -47,7 +47,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     void Update() {
-        this.MoveHorizontal();
+        this.MoveUpdate();
         this.MovementDataUpdate();
     }
 
@@ -58,31 +58,16 @@ public class PlayerController : MonoBehaviour {
     /**
      * Move the player horizontally.
      */
-    void MoveHorizontal() {
+    void MoveUpdate() {
         float horizontal = controls.Move.Move.ReadValue<float>();
         float look = controls.Move.Look.ReadValue<float>();
 
         Vector2 newVelocity;
 
         if (this.moveData.onRightWall) {
-            float relativeMagnitude = body.velocity.y;
-            // TODO: SLOPE VECTOR AND WALL SNAPPING
-            if (horizontal == -1) {
-                this.moveData.onRightWall = false;
-                return;
-            }
-
-            float wallSlideAccel = relativeMagnitude < 0 ?
-                charProps.wallSlideAccel : charProps.wallUpwardsSlideAccel;
-
-            if (relativeMagnitude > -charProps.wallSlideMaxSpeed) {
-                relativeMagnitude = Mathf.Max(-charProps.wallSlideMaxSpeed,
-                    relativeMagnitude - wallSlideAccel * Time.deltaTime);
-            } else if (relativeMagnitude < -charProps.wallSlideMaxSpeed) {
-                relativeMagnitude = Mathf.Min(-charProps.wallSlideMaxSpeed,
-                    relativeMagnitude + wallSlideAccel * Time.deltaTime);
-            }
-            newVelocity = new Vector2(0.0f, relativeMagnitude);
+            newVelocity = this.MoveOnWall(horizontal, look, 1);
+        } else if (this.moveData.onLeftWall) {
+            newVelocity = this.MoveOnWall(horizontal, look, -1);
         } else if (this.IsGrounded() || this.moveData.lastFrameGrounded) {
             newVelocity = this.MoveGrounded(horizontal, look);
         } else {
@@ -106,6 +91,7 @@ public class PlayerController : MonoBehaviour {
             this.moveData.ResetJumps();
             this.moveData.ResetWallRun();
             this.moveData.onRightWall = false;
+            this.moveData.onLeftWall = false;
 
         } else if (!moveData.suspendGravity && this.IsAirborne()) {
             body.gravityScale = 1.0f;
@@ -117,6 +103,14 @@ public class PlayerController : MonoBehaviour {
             body.gravityScale = 0.0f;
         } else if (!this.IsTouchingRightWall()) {
             this.moveData.onRightWall = false;
+        }
+        
+        if (this.IsTouchingLeftWall() && horizontal == -1 && !this.moveData.wallVaulted) {
+            this.moveData.onLeftWall = true;
+            body.gravityScale = 0.0f;
+        }
+        else if (!this.IsTouchingLeftWall()) {
+            this.moveData.onLeftWall = false;
         }
         this.moveData.lastFrameGrounded = isGrounded;
     }
@@ -144,9 +138,19 @@ public class PlayerController : MonoBehaviour {
      */
     void InstantJump() {
         if (this.moveData.onRightWall && !this.IsGrounded()) {
-            body.velocity = charProps.wallJumpVector * charProps.wallJumpSpeed;
+            body.velocity = charProps.rightWallJumpVector * charProps.wallJumpSpeed;
             StartCoroutine(this.WallVault());
             this.moveData.onRightWall = false;
+            this.moveData.facingRight = false;
+            this.moveData.ResetWallRun();
+
+        } else if (this.moveData.onLeftWall && !this.IsGrounded()) {
+            body.velocity = charProps.leftWallJumpVector * charProps.wallJumpSpeed;
+            StartCoroutine(this.WallVault());
+            this.moveData.onLeftWall = false;
+            this.moveData.facingRight = true;
+            this.moveData.ResetWallRun();
+
         } else if (this.IsAirborne() && this.moveData.AttemptJump()) {
             float horizontal = controls.Move.Move.ReadValue<float>();
 
@@ -158,6 +162,8 @@ public class PlayerController : MonoBehaviour {
                 newXVal = Mathf.Min(body.velocity.x, -this.charProps.minAirJumpXSpeed);
             }
             body.velocity = new Vector2(newXVal, charProps.airJumpVel);
+            this.moveData.ResetWallRun();
+
         } else if (this.IsGrounded()) {
             this.moveData.edgeJump = true;
         }
@@ -182,8 +188,16 @@ public class PlayerController : MonoBehaviour {
             StartCoroutine(this.WallVault());
             StartCoroutine(SuspendDashGravity(charProps.dashFloatDur));
             this.moveData.onRightWall = false;
-        }
-        else if (this.IsGrounded()) {
+            this.moveData.facingRight = false;
+            this.moveData.ResetWallRun();
+        } else if (this.moveData.onLeftWall && !this.IsGrounded()) {
+            body.velocity = new Vector2(charProps.maxGroundSpeed, 0.0f);
+            StartCoroutine(this.WallVault());
+            StartCoroutine(SuspendDashGravity(charProps.dashFloatDur));
+            this.moveData.onLeftWall = false;
+            this.moveData.facingRight = true;
+            this.moveData.ResetWallRun();
+        } else if (this.IsGrounded()) {
             // ground dash
             float newVelocity;
             float magnitude = body.velocity.magnitude;
@@ -231,6 +245,54 @@ public class PlayerController : MonoBehaviour {
     ////////////////////////
     /// Private Methods. ///
     ////////////////////////
+
+    /**
+     * Move the player while attached to the wall.
+     */
+    private Vector2 MoveOnWall(float horizontal, float look, float xWallDir) {
+
+        float relativeMagnitude = body.velocity.magnitude;
+        if (body.velocity.y < 0) {
+            relativeMagnitude *= -1;
+        }
+
+        // TODO: SLOPE VECTOR AND WALL SNAPPING
+        if (horizontal == -xWallDir) {
+            this.moveData.onRightWall = false;
+            this.moveData.onLeftWall = false;
+            this.moveData.wallRunning = false;
+            return body.velocity;
+        }
+        if (look == 1 && this.moveData.AttemptWallRun()) {
+            StartCoroutine(this.WallRun());
+        }
+
+        Vector2 raycastVector = xWallDir > 0 ? Vector2.right : Vector2.left;
+        Vector2 slopeVector;
+        try {
+            slopeVector = this.GetWallSlopeVector(raycastVector);
+        }
+        catch (InvalidOperationException) {
+            return body.velocity;
+        }
+
+        if (this.moveData.wallRunning) {
+            return slopeVector * charProps.wallRunSpeed;
+        }
+
+        float wallSlideAccel = relativeMagnitude < 0 ?
+            charProps.wallSlideAccel : charProps.wallUpwardsSlideAccel;
+
+        if (relativeMagnitude > -charProps.wallSlideMaxSpeed) {
+            relativeMagnitude = Mathf.Max(-charProps.wallSlideMaxSpeed,
+                relativeMagnitude - wallSlideAccel * Time.deltaTime);
+        }
+        else if (relativeMagnitude < -charProps.wallSlideMaxSpeed) {
+            relativeMagnitude = Mathf.Min(-charProps.wallSlideMaxSpeed,
+                relativeMagnitude + wallSlideAccel * Time.deltaTime);
+        }
+        return slopeVector * relativeMagnitude;
+    }
 
     /**
      * Get the velocity vector for grounded movement.
@@ -348,7 +410,7 @@ public class PlayerController : MonoBehaviour {
      * Determine whether the player is grounded.
      */
     private bool IsGrounded() {
-        List<RaycastHit2D> raycasts = this.MakeDownRaycasts(charProps.raycastDown);
+        List<RaycastHit2D> raycasts = this.MakeVerticalRaycasts(charProps.raycastDown, Vector2.down);
         return (raycasts[0] || raycasts[1]);
     }
 
@@ -356,11 +418,26 @@ public class PlayerController : MonoBehaviour {
      * Determine if the player is on the right wall.
      */
     private bool IsTouchingRightWall() {
-        List<RaycastHit2D> raycasts = this.MakeHorizontalRaycasts(charProps.raycastHorizontal, Vector2.right);
+        return IsTouchingWall(Vector2.right);
+    }
+
+    /**
+     * Determine if the player is on the left wall.
+     */
+    private bool IsTouchingLeftWall() {
+        return IsTouchingWall(Vector2.left);
+    }
+
+    /**
+     * Determine if the player is on a wall.
+     */
+    private bool IsTouchingWall(Vector2 direction) {
+        List<RaycastHit2D> raycasts = this.MakeHorizontalRaycasts(charProps.raycastHorizontal, direction);
         if (raycasts[0]) {
             Vector2 slopeVector = GetSlopeVectorFromHit(raycasts[0]);
             return Mathf.Abs(slopeVector.y) > slopeVector.x + 0.01f;
-        } else if (raycasts[1]) {
+        }
+        else if (raycasts[1]) {
             Vector2 slopeVector = GetSlopeVectorFromHit(raycasts[1]);
             return Mathf.Abs(slopeVector.y) > slopeVector.x + 0.01f;
         }
@@ -368,12 +445,12 @@ public class PlayerController : MonoBehaviour {
     }
 
     /**
-     * Return the slope angle.
+     * Return the ground slope angle.
      * 
      * Also has the side effect of snapping the transform position to the ground's raycast hit point.
      */
     private Vector2 GetGroundSlopeVector() {
-        List<RaycastHit2D> raycasts = this.MakeDownRaycasts(charProps.raycastDownSlope);
+        List<RaycastHit2D> raycasts = this.MakeVerticalRaycasts(charProps.raycastDownSlope, Vector2.down);
         // snap player to the ground if both raycasts are hit
         if (raycasts[0] && raycasts[1]) {
             RaycastHit2D higher = raycasts[0].point.y > raycasts[1].point.y ? raycasts[0] : raycasts[1];
@@ -389,16 +466,38 @@ public class PlayerController : MonoBehaviour {
     }
 
     /**
+     * Return the wall slope angle.
+     */
+    private Vector2 GetWallSlopeVector(Vector2 direction) {
+        List<RaycastHit2D> raycasts = this.MakeHorizontalRaycasts(charProps.raycastHorizontal, direction);
+        if (raycasts[0]) {
+            Vector2 slopeVector = GetSlopeVectorFromHit(raycasts[0]);
+            if (slopeVector.y < 0) {
+                slopeVector *= -1;
+            }
+            return slopeVector.normalized;
+        }
+        else if (raycasts[1]) {
+            Vector2 slopeVector = GetSlopeVectorFromHit(raycasts[1]);
+            if (slopeVector.y < 0) {
+                slopeVector *= -1;
+            }
+            return slopeVector.normalized;
+        }
+        throw new InvalidOperationException("No raycasts are hit, position is not walled");
+    }
+
+    /**
      * Create down raycasts for the left and right of this transform.
      */
-    private List<RaycastHit2D> MakeDownRaycasts(float raycastLength) {
+    private List<RaycastHit2D> MakeVerticalRaycasts(float raycastLength, Vector2 direction) {
         Vector2 colliderPosLeft = this.GetColliderPos();
         colliderPosLeft.x -= collider.bounds.extents.x;
         Vector2 colliderPosRight = this.GetColliderPos();
         colliderPosRight.x += collider.bounds.extents.x;
         return new List<RaycastHit2D> {
-            Physics2D.Raycast(colliderPosLeft, Vector2.down, raycastLength, ground),
-            Physics2D.Raycast(colliderPosRight, Vector2.down, raycastLength, ground)
+            Physics2D.Raycast(colliderPosLeft, direction, raycastLength, ground),
+            Physics2D.Raycast(colliderPosRight, direction, raycastLength, ground)
         };
     }
 
@@ -411,8 +510,8 @@ public class PlayerController : MonoBehaviour {
         Vector2 colliderPosTop = this.GetColliderPos();
         colliderPosTop.y += collider.bounds.extents.y;
         return new List<RaycastHit2D> {
-            Physics2D.Raycast(colliderPosBot, direction, raycastLength, ground),
-            Physics2D.Raycast(colliderPosTop, direction, raycastLength, ground)
+            Physics2D.Raycast(colliderPosTop, direction, raycastLength, ground),
+            Physics2D.Raycast(colliderPosBot, direction, raycastLength, ground)
         };
     }
 
@@ -432,8 +531,8 @@ public class PlayerController : MonoBehaviour {
      * Determine whether the player is airborne.
      */
     private bool IsAirborne() {
-        // TODO: ensure there is no ceiling or wallhang
-        return !this.IsGrounded() && !this.moveData.onRightWall;
+        // TODO: ensure there is no ceiling hang
+        return !this.IsGrounded() && !this.moveData.onRightWall && !this.moveData.onLeftWall;
     }
 
     /**
@@ -453,5 +552,15 @@ public class PlayerController : MonoBehaviour {
         this.moveData.wallVaulted = true;
         yield return new WaitForSeconds(charProps.wallVaultDur);
         this.moveData.wallVaulted = false;
+    }
+    
+    /**
+     * Vault off the wall, preventing immediate wall cling.
+     */
+    private IEnumerator WallRun() {
+        this.moveData.hasWallRun = false;
+        this.moveData.wallRunning = true;
+        yield return new WaitForSeconds(charProps.wallRunDur);
+        this.moveData.wallRunning = false;
     }
 }

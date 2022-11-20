@@ -32,20 +32,22 @@ public class CharProps : ScriptableObject {
     public float shortJumpVel = 11.5f;
 
     public float airJumpVel = 17.5f;
-    public float airXAccel = 20.0f;
+    public float airXAccel = 12.5f;
     // minimum horizontal jump speed if a direction is held
     public float minAirJumpXSpeed = 7.5f;
     public float maxAirXSpeed = 7.5f;
     public float airDownDashVel = -15.0f;
     public float dashFloatDur = 0.25f;
 
-    public Vector2 wallJumpVector = new Vector2(-1, 2).normalized;
+    public Vector2 rightWallJumpVector = new Vector2(-1, 2).normalized;
+    public Vector2 leftWallJumpVector = new Vector2(1, 2).normalized;
     public float wallJumpSpeed = 20.0f;
-    public float wallRunSpeed = 15.5f;
+    public float wallRunSpeed = 10.0f;
     public float wallSlideAccel = 15.0f;
     public float wallUpwardsSlideAccel = 50.0f;
     public float wallSlideMaxSpeed = 7.5f;
 
+    public float wallRunDur = 0.18f;
     public float wallVaultDur = 0.1f;
 
     public float raycastDown = 1.1f;

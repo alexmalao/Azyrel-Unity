@@ -16,11 +16,17 @@ public class CharMovementData : ScriptableObject {
     public bool hasWallRun = true;
     public bool facingRight = true;
     public bool onRightWall = false;
+    public bool onLeftWall = false;
+
+    // duration based values
     public bool wallVaulted = false;
+    public bool wallRunning = false;
 
     ////////////////////
     /// Logic Values ///
     ////////////////////
+    
+    // determines whether to snap to the ground in case of high velocity
     public bool lastFrameGrounded = true;
     // boolean for keeping track of jumps started slightly before going airborne
     public bool edgeJump = false;
@@ -39,6 +45,7 @@ public class CharMovementData : ScriptableObject {
      */
     public void ResetWallRun() {
         this.hasWallRun = true;
+        this.wallRunning = false;
     }
 
     /**
