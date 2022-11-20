@@ -23,8 +23,6 @@ public class CharProps : ScriptableObject {
     public float groundSpeedPenalty = 2.5f;
     // percent of velocity retained each second while grounded
     public float traction = 0.04f;
-    // percent of distance position is snapped to ground each second
-    public float groundSnapModifier = 0.01f;
     // speed at which character will default stop while grounded
     public float stopSpeed = 1.5f;
 
