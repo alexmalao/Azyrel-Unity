@@ -13,7 +13,7 @@ public class CharProps : ScriptableObject {
     
     public float groundAccel = 7.5f;
     public float minGroundSpeed = 5.0f;
-    public float maxGroundSpeed = 15.0f;
+    public float maxGroundSpeed = 12.5f;
 
     public float slideAccel = 20.0f;
     public float minSlideSpeed = 2.5f;
@@ -24,7 +24,7 @@ public class CharProps : ScriptableObject {
     // percent of velocity retained each second while grounded
     public float traction = 0.04f;
     // speed at which character will default stop while grounded
-    public float stopSpeed = 1.5f;
+    public float stopSpeed = 1.0f;
 
     public float jumpVel = 17.5f;
     public float shortJumpVel = 11.5f;
@@ -39,13 +39,13 @@ public class CharProps : ScriptableObject {
 
     public Vector2 rightWallJumpVector = new Vector2(-1, 2).normalized;
     public Vector2 leftWallJumpVector = new Vector2(1, 2).normalized;
-    public float wallJumpSpeed = 20.0f;
-    public float wallRunSpeed = 10.0f;
+    public float wallJumpSpeed = 17.5f;
+    public float wallRunSpeed = 8.5f;
     public float wallSlideAccel = 15.0f;
-    public float wallUpwardsSlideAccel = 50.0f;
+    public float wallUpwardsSlideAccel = 25.0f;
     public float wallSlideMaxSpeed = 7.5f;
 
-    public float wallRunDur = 0.18f;
+    public float wallRunDur = 0.20f;
     public float wallVaultDur = 0.1f;
 
     public float raycastDown = 1.1f;

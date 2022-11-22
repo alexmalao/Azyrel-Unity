@@ -251,12 +251,9 @@ public class PlayerController : MonoBehaviour {
      */
     private Vector2 MoveOnWall(float horizontal, float look, float xWallDir) {
 
-        float relativeMagnitude = body.velocity.magnitude;
-        if (body.velocity.y < 0) {
-            relativeMagnitude *= -1;
-        }
+        float relativeMagnitude = body.velocity.y;
 
-        // TODO: SLOPE VECTOR AND WALL SNAPPING
+        // TODO: WALL SNAPPING
         if (horizontal == -xWallDir) {
             this.moveData.onRightWall = false;
             this.moveData.onLeftWall = false;
