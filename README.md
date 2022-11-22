@@ -14,6 +14,8 @@ his mother immediately prior to the start of his journey. His memory is hazy and
 wishes to find his missing father who must know the origin of a recently appeared
 accursed. He wields a straight sword and has mastery of both ice and fire magic.
 
+![azyrel](https://github.com/alexmalao/Azyrel/blob/master/gallery/portrait_azyrel.png)
+
 #### Akyra Synthia
 is a red haired knight from the Sky Isles who seeks revenge for her
 fallen brother who she lost to the aforementioned accursed. She travels far in spite
